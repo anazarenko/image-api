@@ -1,0 +1,39 @@
+{% extends 'AppBundle::base.html.twig' %}
+{% form_theme form 'bootstrap_3_layout.html.twig' %}
+
+{% block title %}Profile - Registration{% endblock %}
+
+{% block body %}
+    <div class="container col-md-4 col-md-offset-4">
+
+        {{ form_start(form, {'attr' : {'style' : 'margin-top: 100px'} }) }}
+
+            <div class="form-group">
+                {{ form_label(form.email) }}
+                {{ form_widget(form.email) }}
+                {{ form_errors(form.email, {'attr' : {'class' : 'error'} }) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(form.password.first) }}
+                {{ form_widget(form.password.first) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(form.password.second) }}
+                {{ form_widget(form.password.second) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_errors(form.password.first, {'attr' : {'class' : 'form-error'} }) }}
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-success">Register</button>
+                    <a class="btn btn-default" href="{{ path('profile_login') }}">Return to Login</a>
+                </div>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
