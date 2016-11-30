@@ -40,6 +40,7 @@ class User implements UserInterface, \Serializable
     /**
      * @ORM\Column(type="string", length=60, unique=true)
      * @Assert\Email(groups={"registration"})
+     * @Assert\NotBlank(groups={"registration"})
      */
     private $email;
 
@@ -48,6 +49,11 @@ class User implements UserInterface, \Serializable
      * @Assert\NotBlank(groups={"registration"})
      */
     private $password;
+
+    /**
+     * @ORM\Column(type="string", unique=true)
+     */
+    private $token;
 
     /**
      * @ORM\Column(type="array")
@@ -294,5 +300,29 @@ class User implements UserInterface, \Serializable
     public function getModifiedAt()
     {
         return $this->modifiedAt;
+    }
+
+    /**
+     * Set token
+     *
+     * @param string $token
+     *
+     * @return User
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+
+        return $this;
+    }
+
+    /**
+     * Get token
+     *
+     * @return string
+     */
+    public function getToken()
+    {
+        return $this->token;
     }
 }
