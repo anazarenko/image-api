@@ -3,6 +3,10 @@
 namespace AppBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation\Exclude;
+use JMS\Serializer\Annotation\ExclusionPolicy;
+use JMS\Serializer\Annotation\Expose;
+use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -14,6 +18,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  * @ORM\Entity(repositoryClass="AppBundle\Repository\UserRepository")
  * @UniqueEntity("email", groups={"registration"})
  * @ORM\HasLifecycleCallbacks
+ * @ExclusionPolicy("all")
  */
 class User implements UserInterface, \Serializable
 {
@@ -54,8 +59,20 @@ class User implements UserInterface, \Serializable
 
     /**
      * @ORM\Column(type="string", unique=true)
+     * @Groups({"login"})
+     * @Expose()
      */
     private $token;
+
+    /**
+     * @ORM\Column(type="string")
+     *
+     * @Assert\NotBlank(message="Please, upload the profile avatar picture.", groups={"registration"})
+     * @Assert\Image(maxSize="2M")
+     * @Groups({"login"})
+     * @Expose()
+     */
+    private $avatar;
 
     /**
      * @ORM\Column(type="array")
@@ -69,6 +86,8 @@ class User implements UserInterface, \Serializable
 
     /**
      * @ORM\Column(type="datetime")
+     * @Groups({"login"})
+     * @Expose()
      */
     private $createdAt;
 
@@ -326,5 +345,29 @@ class User implements UserInterface, \Serializable
     public function getToken()
     {
         return $this->token;
+    }
+
+    /**
+     * Set avatar
+     *
+     * @param string $avatar
+     *
+     * @return User
+     */
+    public function setAvatar($avatar)
+    {
+        $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    /**
+     * Get avatar
+     *
+     * @return string
+     */
+    public function getAvatar()
+    {
+        return $this->avatar;
     }
 }

@@ -5,6 +5,7 @@ namespace AppBundle\Form;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -15,7 +16,8 @@ class UserRegistrationType extends AbstractType
         $builder
             ->add('username')
             ->add('email', EmailType::class)
-            ->add('password', PasswordType::class);
+            ->add('password', PasswordType::class)
+            ->add('avatar', FileType::class);
     }
 
     public function configureOptions(OptionsResolver $resolver)

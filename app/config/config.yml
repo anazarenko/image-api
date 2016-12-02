@@ -8,19 +8,6 @@ imports:
 parameters:
     locale: en
 
-nelmio_api_doc: ~
-
-fos_rest:
-    body_listener: true
-    format_listener:
-        rules:
-            - { path: '^/', priorities: ['json'], fallback_format: json, prefer_extension: false }
-    param_fetcher_listener: true
-    view:
-        view_response_listener: 'force'
-        formats:
-            json: true
-
 framework:
     #esi:             ~
     #translator:      { fallbacks: ["%locale%"] }
@@ -116,3 +103,16 @@ knp_paginator:
     template:
         pagination: KnpPaginatorBundle:Pagination:twitter_bootstrap_v3_pagination.html.twig # sliding pagination controls template
         sortable: KnpPaginatorBundle:Pagination:sortable_link.html.twig # sort link template
+
+nelmio_api_doc: ~
+
+fos_rest:
+    body_listener: true
+    format_listener:
+        rules:
+            - { path: '^/', priorities: ['json'], fallback_format: json, prefer_extension: false }
+    param_fetcher_listener: true
+    view:
+        view_response_listener: 'force'
+        formats:
+            json: true
