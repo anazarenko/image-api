@@ -20,5 +20,9 @@ parameters:
 
     # Avatar directory
     avatar_directory: upload/avatars
+
     # Images directory
     image_directory: upload/images
+
+    # OpenWeather Api key
+    open_weather_api_key: ~

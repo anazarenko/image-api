@@ -6,6 +6,7 @@ use AppBundle\Entity\Image;
 use AppBundle\Entity\User;
 use AppBundle\Form\ImageUploadType;
 use AppBundle\Form\UserRegistrationType;
+use AppBundle\Model\Geolocation\GeolocationFactory;
 use FOS\RestBundle\View\View;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
@@ -119,12 +120,23 @@ class UserController extends Controller
             $image->setImage($fileName);
             $image->setBigImagePath('http://'.$request->getHost().'/'.$this->getParameter('image_directory').'/'.$fileName);
 
+            // Get address
+            $geolocator = GeolocationFactory::create(GeolocationFactory::TYPE_GOOGLE);
+            $address = $geolocator->getAddress($image->getLatitude(), $image->getLongitude());
+            $image->setAddress($address);
+
+            // Get weather
+            $weatherService = $this->get('app.weather_manager');
+            $weatherString = $weatherService->getWeatherByCoords($image->getLatitude(), $image->getLongitude());
+            $image->setWeather($weatherString);
+
             $entityManager->persist($image);
             $entityManager->flush();
 
             $response = array(
-                'image' => $image,
-                'bigPath' => $image->getBigImagePath()
+                'bigPhoto' => $image->getBigImagePath(),
+                'weather' => $image->getWeather(),
+                'address' => $image->getAddress(),
             );
 
             return View::create($response, 201);
