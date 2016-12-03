@@ -20,3 +20,5 @@ parameters:
 
     # Avatar directory
     avatar_directory: upload/avatars
+    # Images directory
+    image_directory: upload/images

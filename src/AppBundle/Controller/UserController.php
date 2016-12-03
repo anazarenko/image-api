@@ -2,14 +2,16 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\Entity\Image;
 use AppBundle\Entity\User;
+use AppBundle\Form\ImageUploadType;
 use AppBundle\Form\UserRegistrationType;
 use FOS\RestBundle\View\View;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
@@ -75,5 +77,70 @@ class UserController extends Controller
         }
 
         return View::create($form, 400);
+    }
+
+    /**
+     * @param Request $request
+     * @return static
+     *
+     * @Rest\View(serializerGroups={"upload"})
+     */
+    public function imageAction(Request $request)
+    {
+        $token = $request->request->get('token');
+        $user = $this->getDoctrine()->getRepository('AppBundle:User')->findOneBy(array('token' => $token));
+
+        if (!$user) {
+            return View::create(array('error' => 'Invalid access token'), 403);
+        }
+
+        $request->request->remove('token');
+
+        $entityManager = $this->getDoctrine()->getManager();
+        $image = new Image();
+
+        // Create form
+        $form = $this->createForm(new ImageUploadType(), $image);
+        // Handle request
+        $this->processForm($request, $form);
+
+        if ($form->isValid()) {
+            // $file stores the uploaded avatar file
+            /** @var UploadedFile $file */
+            $file = $image->getImage();
+
+            // Generate a unique name for the picture before saving it
+            $fileName = md5(uniqid()).'.'.$file->guessExtension();
+
+            // Move the file to the directory where avatars are stored
+            $file->move($this->getParameter('image_directory'), $fileName);
+
+            // Save picture path
+            $image->setImage($fileName);
+            $image->setBigImagePath('http://'.$request->getHost().'/'.$this->getParameter('image_directory').'/'.$fileName);
+
+            $entityManager->persist($image);
+            $entityManager->flush();
+
+            $response = array(
+                'image' => $image,
+                'bigPath' => $image->getBigImagePath()
+            );
+
+            return View::create($response, 201);
+        }
+
+        return View::create($form, 400);
+    }
+
+    /**
+     * @param Request $request
+     * @param FormInterface $form
+     */
+    private function processForm(Request $request, FormInterface $form)
+    {
+        $data = array_merge($request->request->all(), $request->files->all());
+        $clearMissing = $request->getMethod() != 'PATCH';
+        $form->submit($data, $clearMissing);
     }
 }

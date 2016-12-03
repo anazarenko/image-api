@@ -2,6 +2,7 @@
 
 namespace AppBundle\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Exclude;
 use JMS\Serializer\Annotation\ExclusionPolicy;
@@ -95,6 +96,18 @@ class User implements UserInterface, \Serializable
      * @ORM\Column(type="datetime")
      */
     private $modifiedAt;
+
+    /**
+     * @ORM\OneToMany(targetEntity="AppBundle\Entity\Image", mappedBy="user")
+     */
+    private $images;
+
+    /**
+     * User constructor.
+     */
+    public function __construct() {
+        $this->imagesm = new ArrayCollection();
+    }
 
     /**
      * @param $role
@@ -369,5 +382,39 @@ class User implements UserInterface, \Serializable
     public function getAvatar()
     {
         return $this->avatar;
+    }
+
+    /**
+     * Add image
+     *
+     * @param \AppBundle\Entity\Image $image
+     *
+     * @return User
+     */
+    public function addImage(\AppBundle\Entity\Image $image)
+    {
+        $this->images[] = $image;
+
+        return $this;
+    }
+
+    /**
+     * Remove image
+     *
+     * @param \AppBundle\Entity\Image $image
+     */
+    public function removeImage(\AppBundle\Entity\Image $image)
+    {
+        $this->images->removeElement($image);
+    }
+
+    /**
+     * Get images
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getImages()
+    {
+        return $this->images;
     }
 }

@@ -9,3 +9,9 @@ app_user_create:
     defaults: { _controller: AppBundle:User:login }
     requirements:
         _method: POST
+
+app_image_upload:
+    pattern: /image
+    defaults: { _controller: AppBundle:User:image }
+    requirements:
+        _method: POST
