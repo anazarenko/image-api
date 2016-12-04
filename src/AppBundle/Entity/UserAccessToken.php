@@ -2,22 +2,26 @@
 
 namespace AppBundle\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Exclude;
 use JMS\Serializer\Annotation\ExclusionPolicy;
 use JMS\Serializer\Annotation\Expose;
 use JMS\Serializer\Annotation\Groups;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
- * Animation
+ * Access Token
  *
- * @ORM\Table(name="animations")
- * @ORM\Entity(repositoryClass="AppBundle\Repository\AnimationRepository")
+ * @ORM\Table(name="user_access_tokens")
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\UserAccessTokenRepository")
+ * @UniqueEntity("accessToken")
  * @ORM\HasLifecycleCallbacks
  * @ExclusionPolicy("all")
  */
-class Animation
+class UserAccessToken
 {
     /**
      * @var int
@@ -29,54 +33,31 @@ class Animation
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="AppBundle\Entity\User", inversedBy="animations")
-     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", onDelete="SET NULL")
+     * @ORM\ManyToOne(targetEntity="AppBundle\Entity\User", inversedBy="accessTokens")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $user;
 
     /**
-     * @ORM\Column(type="string")
-     *
-     * @Assert\NotBlank(message="Please, upload the image.", groups={"animation"})
-     * @Assert\Image(
-     *     mimeTypes = {"image/gif"},
-     *     mimeTypesMessage = "Wrong file type (gif)",
-     *     groups={"animation"}
-     * )
-     * @Groups({"animation"})
-     * @Expose()
+     * @ORM\Column(type="string", unique=true)
      */
-    private $image;
+    private $accessToken;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(name="is_active", type="boolean")
      */
-    private $weather;
+    private $isActive = true;
 
     /**
      * @ORM\Column(type="datetime")
-     * @Groups({"login"})
-     * @Expose()
      */
     private $createdAt;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $modifiedAt;
+    private $expiredAt;
 
-    /**
-     * @ORM\PrePersist
-     * @ORM\PreUpdate
-     */
-    public function updatedTimestamps()
-    {
-        $this->setModifiedAt(new \DateTime('now'));
-
-        if ($this->getCreatedAt() == null) {
-            $this->setCreatedAt(new \DateTime('now'));
-        }
-    }
 
     /**
      * Get id
@@ -89,51 +70,51 @@ class Animation
     }
 
     /**
-     * Set image
+     * Set accessToken
      *
-     * @param string $image
+     * @param string $accessToken
      *
-     * @return Animation
+     * @return UserAccessToken
      */
-    public function setImage($image)
+    public function setAccessToken($accessToken)
     {
-        $this->image = $image;
+        $this->accessToken = $accessToken;
 
         return $this;
     }
 
     /**
-     * Get image
+     * Get accessToken
      *
      * @return string
      */
-    public function getImage()
+    public function getAccessToken()
     {
-        return $this->image;
+        return $this->accessToken;
     }
 
     /**
-     * Set weather
+     * Set isActive
      *
-     * @param string $weather
+     * @param boolean $isActive
      *
-     * @return Animation
+     * @return UserAccessToken
      */
-    public function setWeather($weather)
+    public function setIsActive($isActive)
     {
-        $this->weather = $weather;
+        $this->isActive = $isActive;
 
         return $this;
     }
 
     /**
-     * Get weather
+     * Get isActive
      *
-     * @return string
+     * @return boolean
      */
-    public function getWeather()
+    public function getIsActive()
     {
-        return $this->weather;
+        return $this->isActive;
     }
 
     /**
@@ -141,7 +122,7 @@ class Animation
      *
      * @param \DateTime $createdAt
      *
-     * @return Animation
+     * @return UserAccessToken
      */
     public function setCreatedAt($createdAt)
     {
@@ -161,27 +142,27 @@ class Animation
     }
 
     /**
-     * Set modifiedAt
+     * Set expiredAt
      *
-     * @param \DateTime $modifiedAt
+     * @param \DateTime $expiredAt
      *
-     * @return Animation
+     * @return UserAccessToken
      */
-    public function setModifiedAt($modifiedAt)
+    public function setExpiredAt($expiredAt)
     {
-        $this->modifiedAt = $modifiedAt;
+        $this->expiredAt = $expiredAt;
 
         return $this;
     }
 
     /**
-     * Get modifiedAt
+     * Get expiredAt
      *
      * @return \DateTime
      */
-    public function getModifiedAt()
+    public function getExpiredAt()
     {
-        return $this->modifiedAt;
+        return $this->expiredAt;
     }
 
     /**
@@ -189,7 +170,7 @@ class Animation
      *
      * @param \AppBundle\Entity\User $user
      *
-     * @return Animation
+     * @return UserAccessToken
      */
     public function setUser(\AppBundle\Entity\User $user = null)
     {

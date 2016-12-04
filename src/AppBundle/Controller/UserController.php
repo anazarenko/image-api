@@ -5,9 +5,9 @@ namespace AppBundle\Controller;
 use AppBundle\Entity\Animation;
 use AppBundle\Entity\Image;
 use AppBundle\Entity\User;
+use AppBundle\Entity\UserAccessToken;
 use AppBundle\Form\ImageUploadType;
 use AppBundle\Form\UserRegistrationType;
-use AppBundle\Manager\ImageManager;
 use AppBundle\Model\Geolocation\GeolocationFactory;
 use FOS\RestBundle\View\View;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -53,11 +53,15 @@ class UserController extends Controller
             $encoder = $this->container->get('security.password_encoder');
             $imageManager = $this->get('app.image_manager');
 
-            $token = md5(uniqid($user->getEmail(), true));
             $encoded = $encoder->encodePassword($user, $user->getPassword());
             $user->setPassword($encoded);
-            $user->setToken($token);
             $user->setRoles(array(User::ROLE_USER));
+
+            $accessToken = new UserAccessToken();
+            $accessToken->setUser($user);
+            $accessToken->setAccessToken(md5(uniqid($user->getEmail(), true)));
+            $accessToken->setCreatedAt(new \DateTime('now'));
+            $accessToken->setExpiredAt((new \DateTime('now'))->modify('+1 month'));
 
             // $file stores the uploaded avatar file
             /** @var UploadedFile $file */
@@ -76,11 +80,12 @@ class UserController extends Controller
             $user->setAvatar($fileName);
 
             $entityManager->persist($user);
+            $entityManager->persist($accessToken);
             $entityManager->flush();
 
             $response = array(
                 'creation_time' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
-                'token' => $token,
+                'token' => $accessToken->getAccessToken(),
                 'avatar' => $imageManager->getAbsolutePath(
                     $request,
                     $this->getParameter('avatar_directory'),
@@ -201,20 +206,28 @@ class UserController extends Controller
             // Get address
             $geolocator = GeolocationFactory::create(GeolocationFactory::TYPE_GOOGLE);
             $address = $geolocator->getAddress($image->getLatitude(), $image->getLongitude());
-            $image->setAddress($address);
+            if ($address) {
+                $image->setAddress($address);
+            } else {
+                $address = 'The address is not available in this place';
+            }
 
             // Get weather
             $weatherService = $this->get('app.weather_manager');
             $weatherString = $weatherService->getWeatherByCoords($image->getLatitude(), $image->getLongitude());
-            $image->setWeather(strtolower($weatherString));
+            if ($weatherString) {
+                $image->setWeather(strtolower($weatherString));
+            } else {
+                $weatherString = 'The weather is not available in this place';
+            }
 
             $entityManager->persist($image);
             $entityManager->flush();
 
             $response = array(
                 'parameters' => array(
-                    'address' => $image->getAddress(),
-                    'weather' => ucfirst($image->getWeather())
+                    'address' => $address,
+                    'weather' => $weatherString
                 ),
                 'smallImage' => $smallImage ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_small'), $smallImage) : '',
                 'bigImage' => $bigImage ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_big'), $bigImage) : ''
@@ -256,15 +269,9 @@ class UserController extends Controller
         }
 
         $imageManager = $this->get('app.image_manager');
-
-        // Get all user images
-        $images = $this->getDoctrine()->getRepository('AppBundle:Image')->findBy(array('user' => $user));
-        // Get all animations
-        $animations = $this->getDoctrine()->getRepository('AppBundle:Animation')->findBy(array('user' => $user));
-
         $response = array();
 
-        foreach ($images as $image) {
+        foreach ($user->getImages() as $image) {
             $response['images'][] = array(
                 'id' => $image->getId(),
                 'description' => $image->getDescription(),
@@ -275,18 +282,26 @@ class UserController extends Controller
                     'address' => $image->getAddress(),
                     'weather' => ucfirst($image->getWeather())
                 ),
-                'smallImage' => $image->getSmallImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_small'), $image->getSmallImage()) : '',
-                'bigImage' => $image->getBigImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_big'), $image->getBigImage()) : '',
+                'smallImagePath' => $image->getSmallImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_small'), $image->getSmallImage()) : '',
+                'bigImagePath' => $image->getBigImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_big'), $image->getBigImage()) : '',
                 'created' => $image->getCreatedAt()->format('d-m-Y H:i:s')
             );
         }
 
-        foreach ($animations as $animation) {
+        foreach ($user->getAnimations() as $animation) {
             $response['gif'][] = array(
                 'id' => $animation->getId(),
                 'weather' => $animation->getWeather(),
-                'gif' => $animation->getImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('gif_directory'), $animation->getImage()) : '',
+                'path' => $animation->getImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('gif_directory'), $animation->getImage()) : '',
                 'created' => $animation->getCreatedAt()->format('d-m-Y H:i:s')
+            );
+        }
+
+        /** @var UserAccessToken $token */
+        foreach ($user->getAccessTokens() as $token) {
+            $response['tokens'][] = array(
+                'token' => $token->getAccessToken(),
+                'expiredAt' => $token->getExpiredAt()->format('d-m-Y')
             );
         }
 
@@ -368,8 +383,14 @@ class UserController extends Controller
     private function validateToken(Request $request)
     {
         $token = $request->headers->get('token');
-        $user = $this->getDoctrine()->getRepository('AppBundle:User')->findOneBy(array('token' => $token));
+        $accessToken = $this->getDoctrine()
+            ->getRepository('AppBundle:UserAccessToken')
+            ->findOneBy(array('accessToken' => $token));
 
-        return $user;
+        if ($accessToken) {
+            return $accessToken->getUser();
+        }
+
+        return false;
     }
 }

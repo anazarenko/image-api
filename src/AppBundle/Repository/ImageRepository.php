@@ -22,6 +22,7 @@ class ImageRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('im');
         $qb->where('im.user = :user')
+            ->orderBy('im.createdAt', 'DESC')
             ->setMaxResults($count)
             ->setParameter('user', $user);
 

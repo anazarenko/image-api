@@ -59,13 +59,6 @@ class User implements UserInterface, \Serializable
     private $password;
 
     /**
-     * @ORM\Column(type="string", unique=true)
-     * @Groups({"login"})
-     * @Expose()
-     */
-    private $token;
-
-    /**
      * @ORM\Column(type="string")
      *
      * @Assert\NotBlank(message="Please, upload the profile avatar picture.", groups={"registration"})
@@ -113,10 +106,17 @@ class User implements UserInterface, \Serializable
     private $animations;
 
     /**
+     * @ORM\OneToMany(targetEntity="AppBundle\Entity\UserAccessToken", mappedBy="user")
+     */
+    private $accessTokens;
+
+    /**
      * User constructor.
      */
     public function __construct() {
-        $this->imagesm = new ArrayCollection();
+        $this->images = new ArrayCollection();
+        $this->animations = new ArrayCollection();
+        $this->accessTokens = new ArrayCollection();
     }
 
     /**
@@ -347,30 +347,6 @@ class User implements UserInterface, \Serializable
     }
 
     /**
-     * Set token
-     *
-     * @param string $token
-     *
-     * @return User
-     */
-    public function setToken($token)
-    {
-        $this->token = $token;
-
-        return $this;
-    }
-
-    /**
-     * Get token
-     *
-     * @return string
-     */
-    public function getToken()
-    {
-        return $this->token;
-    }
-
-    /**
      * Set avatar
      *
      * @param string $avatar
@@ -426,5 +402,73 @@ class User implements UserInterface, \Serializable
     public function getImages()
     {
         return $this->images;
+    }
+
+    /**
+     * Add animation
+     *
+     * @param \AppBundle\Entity\Animation $animation
+     *
+     * @return User
+     */
+    public function addAnimation(\AppBundle\Entity\Animation $animation)
+    {
+        $this->animations[] = $animation;
+
+        return $this;
+    }
+
+    /**
+     * Remove animation
+     *
+     * @param \AppBundle\Entity\Animation $animation
+     */
+    public function removeAnimation(\AppBundle\Entity\Animation $animation)
+    {
+        $this->animations->removeElement($animation);
+    }
+
+    /**
+     * Get animations
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getAnimations()
+    {
+        return $this->animations;
+    }
+
+    /**
+     * Add accessToken
+     *
+     * @param \AppBundle\Entity\UserAccessToken $accessToken
+     *
+     * @return User
+     */
+    public function addAccessToken(\AppBundle\Entity\UserAccessToken $accessToken)
+    {
+        $this->accessTokens[] = $accessToken;
+
+        return $this;
+    }
+
+    /**
+     * Remove accessToken
+     *
+     * @param \AppBundle\Entity\UserAccessToken $accessToken
+     */
+    public function removeAccessToken(\AppBundle\Entity\UserAccessToken $accessToken)
+    {
+        $this->accessTokens->removeElement($accessToken);
+    }
+
+    /**
+     * Get accessTokens
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getAccessTokens()
+    {
+        return $this->accessTokens;
     }
 }

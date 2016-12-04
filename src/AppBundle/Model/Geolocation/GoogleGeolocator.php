@@ -20,7 +20,7 @@ class GoogleGeolocator extends Geolocator
         $request = 'http://maps.googleapis.com/maps/api/geocode/json?latlng='.$geolocation.'&sensor=false';
         $file_contents = file_get_contents($request);
         $locationData = json_decode($file_contents);
-        $address = '';
+        $address = null;
 
         if ($locationData->status === 'OK' && isset($locationData->results)) {
             $address = $locationData->results[0]->formatted_address;

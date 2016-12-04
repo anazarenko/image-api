@@ -33,22 +33,20 @@ class WeatherManager
      */
     public function getWeatherByCoords($latitude, $longitude)
     {
-        $weatherString = '';
-
         $weatherParams = 'lat='.$latitude.'&lon='.$longitude.'&appid='.$this->apiKey;
         try {
             $request = 'http://api.openweathermap.org/data/2.5/weather?' . $weatherParams;
-            $file_contents = file_get_contents($request);
+            $file_contents = @file_get_contents($request);
             $response = json_decode($file_contents);
 
             if (isset($response->weather[0])) {
-                $weatherString = $response->weather[0]->main;
+                return $response->weather[0]->main;
+            } else {
+                return null;
             }
 
         } catch(\Exception $e) {
-            $weatherString = 'The weather is not available right now';
+            return null;
         }
-
-        return $weatherString;
     }
 }
