@@ -93,24 +93,12 @@ doctrine_migrations:
     table_name: migration_versions
     name: Application Migrations
 
-knp_paginator:
-    page_range: 5                      # default page range used in pagination control
-    default_options:
-        page_name: page                # page query parameter name
-        sort_field_name: sort          # sort field query parameter name
-        sort_direction_name: direction # sort direction query parameter name
-        distinct: true                 # ensure distinct results, useful when ORM queries are using GROUP BY statements
-    template:
-        pagination: KnpPaginatorBundle:Pagination:twitter_bootstrap_v3_pagination.html.twig # sliding pagination controls template
-        sortable: KnpPaginatorBundle:Pagination:sortable_link.html.twig # sort link template
-
 nelmio_api_doc: ~
 
 fos_rest:
     body_listener: true
     format_listener:
         rules:
-            - { path: '^/profile', priorities: ['html'], fallback_format: html, prefer_extension: false }
             - { path: '^/', priorities: ['json'], fallback_format: json, prefer_extension: false }
     param_fetcher_listener: true
     view:

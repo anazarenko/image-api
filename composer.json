@@ -25,7 +25,9 @@
         "jms/serializer-bundle": "^1.1",
         "nelmio/api-doc-bundle": "^2.13",
         "kenguest/services-openstreetmap": "dev-master",
-        "sybio/gif-creator": "^1.0"
+        "sybio/gif-creator": "^1.0",
+        "phpunit/phpunit": "^4.8",
+        "guzzlehttp/guzzle": "^6.2"
     },
     "require-dev": {
         "sensio/generator-bundle": "~3.0",

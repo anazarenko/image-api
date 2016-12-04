@@ -1,23 +1,23 @@
 app_user_create:
     pattern: /login
-    defaults: { _controller: AppBundle:User:login }
+    defaults: { _controller: AppBundle:Api:login }
     requirements:
         _method: POST
 
 app_image_upload:
     pattern: /image
-    defaults: { _controller: AppBundle:User:image }
+    defaults: { _controller: AppBundle:Api:image }
     requirements:
         _method: POST
 
 app_all:
     pattern: /all
-    defaults: { _controller: AppBundle:User:all }
+    defaults: { _controller: AppBundle:Api:all }
     requirements:
         _method: GET
 
 app_image_gif:
     pattern: /gif
-    defaults: { _controller: AppBundle:User:gif }
+    defaults: { _controller: AppBundle:Api:gif }
     requirements:
         _method: GET

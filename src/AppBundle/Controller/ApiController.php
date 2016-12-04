@@ -18,7 +18,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 
-class UserController extends Controller
+class ApiController extends Controller
 {
     /**
      * @ApiDoc(

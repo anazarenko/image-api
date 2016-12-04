@@ -64,7 +64,7 @@ class ImageManager
         imagecopyresampled($image_p, $image, 0, 0, 0, 0, $width, $height, $width_orig, $height_orig);
 
         if (!$fs->exists($pathToSave)) {
-            $fs->mkdir($pathToSave, 0700);
+            $fs->mkdir($pathToSave, 0755);
         }
 
         $newFilename = md5($file->getFilename()).'.'.$file->getExtension();
@@ -90,16 +90,6 @@ class ImageManager
      */
     public function createGif($images)
     {
-        // Create an array containing file paths, resource var (initialized with imagecreatefromXXX),
-        // image URLs or even binary code from image files.
-        // All sorted in order to appear.
-//        $frames = array(
-//            imagecreatefrompng("/../images/pic1.png"), // Resource var
-//            "/../images/pic2.png", // Image file path
-//            file_get_contents("/../images/pic3.jpg"), // Binary source code
-//            'http://thisisafakedomain.com/images/pic4.jpg', // URL
-//        );
-
         $fs = new Filesystem();
         $pathToSave = $this->container->getParameter('gif_directory');
         $frames = array();
@@ -122,7 +112,7 @@ class ImageManager
         $gifBinary = $gc->getGif();
 
         if (!$fs->exists($pathToSave)) {
-            $fs->mkdir($pathToSave, 0700);
+            $fs->mkdir($pathToSave, 0755);
         }
 
         $fileName = md5(uniqid()).'.gif';
