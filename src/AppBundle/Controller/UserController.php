@@ -146,11 +146,13 @@ class UserController extends Controller
                 $fs->copy($this->getParameter('image_directory').'/'.$fileName, $this->getParameter('image_directory_big').'/'.$fileName);
             }
 
-
             // Save picture path
             $image->setImage($fileName);
             $image->setBigImage($bigImage);
             $image->setSmallImage($smallImage);
+
+            // Add user to image
+            $image->setUser($user);
 
             // Get address
             $geolocator = GeolocationFactory::create(GeolocationFactory::TYPE_GOOGLE);
@@ -162,8 +164,8 @@ class UserController extends Controller
             $weatherString = $weatherService->getWeatherByCoords($image->getLatitude(), $image->getLongitude());
             $image->setWeather($weatherString);
 
-//            $entityManager->persist($image);
-//            $entityManager->flush();
+            $entityManager->persist($image);
+            $entityManager->flush();
 
             $response = array(
                 'smallImage' => $smallImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_small').'/'.$smallImage : '',
