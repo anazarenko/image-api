@@ -18,16 +18,6 @@ use Symfony\Component\HttpFoundation\Request;
 class UserController extends Controller
 {
     /**
-     * @Rest\View
-     */
-    public function allAction()
-    {
-        $users = $this->getDoctrine()->getRepository('AppBundle:User')->findBy(array('isActive' => true));
-
-        return array('users' => $users);
-    }
-
-    /**
      * @param Request $request
      * @return static
      *
@@ -89,14 +79,10 @@ class UserController extends Controller
      */
     public function imageAction(Request $request)
     {
-        $token = $request->request->get('token');
-        $user = $this->getDoctrine()->getRepository('AppBundle:User')->findOneBy(array('token' => $token));
-
-        if (!$user) {
+        // Validate token
+        if (!$user = $this->validateToken($request)) {
             return View::create(array('error' => 'Invalid access token'), 403);
         }
-
-        $request->request->remove('token');
 
         $entityManager = $this->getDoctrine()->getManager();
         $image = new Image();
@@ -168,16 +154,56 @@ class UserController extends Controller
             $entityManager->flush();
 
             $response = array(
+                'parameters' => array(
+                    'address' => $image->getAddress(),
+                    'weather' => $image->getWeather()
+                ),
                 'smallImage' => $smallImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_small').'/'.$smallImage : '',
-                'bigImage' => $bigImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_big').'/'.$bigImage : '',
-                'weather' => $image->getWeather(),
-                'address' => $image->getAddress(),
+                'bigImage' => $bigImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_big').'/'.$bigImage : ''
             );
 
             return View::create($response, 201);
         }
 
         return View::create($form, 400);
+    }
+
+    /**
+     * @param Request $request
+     * @return static
+     *
+     * @Rest\View(serializerGroups={"all"})
+     */
+    public function allAction(Request $request)
+    {
+        // Validate token
+        if (!$user = $this->validateToken($request)) {
+            return View::create(array('error' => 'Invalid access token'), 403);
+        }
+
+        // Get all user images
+        $images = $this->getDoctrine()->getRepository('AppBundle:Image')->findBy(array('user' => $user));
+
+        $response = array();
+
+        foreach ($images as $image) {
+            $response['images'][] = array(
+                'id' => $image->getId(),
+                'description' => $image->getDescription(),
+                'hashtag' => $image->getHashtag(),
+                'parameters' => array(
+                    'longitude' => $image->getLongitude(),
+                    'latitude' => $image->getLatitude(),
+                    'address' => $image->getAddress(),
+                    'weather' => $image->getWeather()
+                ),
+                'smallImage' => $image->getSmallImage() ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_small').'/'.$image->getSmallImage() : '',
+                'bigImage' => $image->getBigImage() ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_big').'/'.$image->getBigImage() : '',
+                'created' => $image->getCreatedAt()->format('d-m-Y H:i:s')
+            );
+        }
+
+        return View::create($response, 200);
     }
 
     /**
@@ -189,5 +215,17 @@ class UserController extends Controller
         $data = array_merge($request->request->all(), $request->files->all());
         $clearMissing = $request->getMethod() != 'PATCH';
         $form->submit($data, $clearMissing);
+    }
+
+    /**
+     * @param Request $request
+     * @return User|null|object
+     */
+    private function validateToken(Request $request)
+    {
+        $token = $request->headers->get('token');
+        $user = $this->getDoctrine()->getRepository('AppBundle:User')->findOneBy(array('token' => $token));
+
+        return $user;
     }
 }
