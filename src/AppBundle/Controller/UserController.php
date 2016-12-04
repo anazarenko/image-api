@@ -6,6 +6,7 @@ use AppBundle\Entity\Image;
 use AppBundle\Entity\User;
 use AppBundle\Form\ImageUploadType;
 use AppBundle\Form\UserRegistrationType;
+use AppBundle\Manager\ImageManager;
 use AppBundle\Model\Geolocation\GeolocationFactory;
 use FOS\RestBundle\View\View;
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
@@ -41,15 +42,16 @@ class UserController extends Controller
      */
     public function loginAction(Request $request)
     {
-        $entityManager = $this->getDoctrine()->getManager();
-        $encoder = $this->container->get('security.password_encoder');
-
         $user = new User();
 
         $form = $this->createForm(new UserRegistrationType(), $user);
         $this->processForm($request, $form);
 
         if ($form->isValid()) {
+            $entityManager = $this->getDoctrine()->getManager();
+            $encoder = $this->container->get('security.password_encoder');
+            $imageManager = $this->get('app.image_manager');
+
             $token = md5(uniqid($user->getEmail(), true));
             $encoded = $encoder->encodePassword($user, $user->getPassword());
             $user->setPassword($encoded);
@@ -78,7 +80,11 @@ class UserController extends Controller
             $response = array(
                 'creation_time' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
                 'token' => $token,
-                'avatar' => 'http://'.$request->getHost().'/'.$this->getParameter('avatar_directory').'/'.$user->getAvatar()
+                'avatar' => $imageManager->getAbsolutePath(
+                    $request,
+                    $this->getParameter('avatar_directory'),
+                    $user->getAvatar()
+                )
             );
 
             return View::create($response, 201);
@@ -124,7 +130,6 @@ class UserController extends Controller
             return View::create(array('error' => 'Invalid access token'), 403);
         }
 
-        $entityManager = $this->getDoctrine()->getManager();
         $image = new Image();
 
         // Create form
@@ -133,6 +138,9 @@ class UserController extends Controller
         $this->processForm($request, $form);
 
         if ($form->isValid()) {
+            $entityManager = $this->getDoctrine()->getManager();
+            $imageManager = $this->get('app.image_manager');
+
             // $file stores the uploaded avatar file
             /** @var UploadedFile $file */
             $file = $image->getImage();
@@ -147,21 +155,26 @@ class UserController extends Controller
             $smallImage = $this
                 ->get('app.image_manager')
                 ->resizeImage(
-                    $this->getParameter('image_directory').'/'.$fileName,
+                    $imageManager->getRelativePath($this->getParameter('image_directory'), $fileName),
                     $this->getParameter('image_directory_small'),
                     300,
                     300
                 );
 
             // Get sizes
-            list($width_orig, $height_orig) = getimagesize($this->getParameter('image_directory').'/'.$fileName);
+            list($width_orig, $height_orig) = getimagesize(
+                $imageManager->getRelativePath(
+                    $this->getParameter('image_directory'),
+                    $fileName
+                )
+            );
 
             // Create big image
             if ($width_orig > 1200 || $height_orig > 1200) {
                 $bigImage = $this
                     ->get('app.image_manager')
                     ->resizeImage(
-                        $this->getParameter('image_directory').'/'.$fileName,
+                        $imageManager->getRelativePath($this->getParameter('image_directory'), $fileName),
                         $this->getParameter('image_directory_small'),
                         800,
                         800
@@ -170,6 +183,10 @@ class UserController extends Controller
                 $bigImage = $fileName;
                 $fs = new Filesystem();
                 $fs->copy($this->getParameter('image_directory').'/'.$fileName, $this->getParameter('image_directory_big').'/'.$fileName);
+                $fs->copy(
+                    $imageManager->getRelativePath($this->getParameter('image_directory'), $fileName),
+                    $imageManager->getRelativePath($this->getParameter('image_directory_big'), $fileName)
+                );
             }
 
             // Save picture path
@@ -188,7 +205,7 @@ class UserController extends Controller
             // Get weather
             $weatherService = $this->get('app.weather_manager');
             $weatherString = $weatherService->getWeatherByCoords($image->getLatitude(), $image->getLongitude());
-            $image->setWeather($weatherString);
+            $image->setWeather(strtolower($weatherString));
 
             $entityManager->persist($image);
             $entityManager->flush();
@@ -196,10 +213,10 @@ class UserController extends Controller
             $response = array(
                 'parameters' => array(
                     'address' => $image->getAddress(),
-                    'weather' => $image->getWeather()
+                    'weather' => ucfirst($image->getWeather())
                 ),
-                'smallImage' => $smallImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_small').'/'.$smallImage : '',
-                'bigImage' => $bigImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_big').'/'.$bigImage : ''
+                'smallImage' => $smallImage ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_small'), $smallImage) : '',
+                'bigImage' => $bigImage ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_big'), $bigImage) : ''
             );
 
             return View::create($response, 201);
@@ -237,8 +254,72 @@ class UserController extends Controller
             return View::create(array('error' => 'Invalid access token'), 403);
         }
 
+        $imageManager = $this->get('app.image_manager');
+
         // Get all user images
         $images = $this->getDoctrine()->getRepository('AppBundle:Image')->findBy(array('user' => $user));
+
+        $response = array();
+
+        foreach ($images as $image) {
+            $response['images'][] = array(
+                'id' => $image->getId(),
+                'description' => $image->getDescription(),
+                'hashtag' => $image->getHashtag(),
+                'parameters' => array(
+                    'longitude' => $image->getLongitude(),
+                    'latitude' => $image->getLatitude(),
+                    'address' => $image->getAddress(),
+                    'weather' => ucfirst($image->getWeather())
+                ),
+                'smallImage' => $image->getSmallImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_small'), $image->getSmallImage()) : '',
+                'bigImage' => $image->getBigImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('image_directory_big'), $image->getBigImage()) : '',
+                'created' => $image->getCreatedAt()->format('d-m-Y H:i:s')
+            );
+        }
+
+        return View::create($response, 200);
+    }
+
+    /**
+     * @ApiDoc(
+     *     resource=true,
+     *     description="Get all user images",
+     *     headers={
+     *         {
+     *             "name"="token",
+     *             "description"="Authorization key",
+     *             "required"=true
+     *         }
+     *     },
+     *     statusCodes={
+     *         200="Successfully done",
+     *         403="Returned when invalid access token"
+     *     }
+     * )
+     *
+     * @param Request $request
+     * @return static
+     *
+     * @Rest\View(serializerGroups={"gif"})
+     */
+    public function gifAction(Request $request)
+    {
+        // Validate token
+        if (!$user = $this->validateToken($request)) {
+            return View::create(array('error' => 'Invalid access token'), 403);
+        }
+
+        $weatherParam = $request->query->get('weather');
+
+        // Get all user images
+        $images = $this->getDoctrine()
+            ->getRepository('AppBundle:Image')
+            ->findBy(
+                array('user' => $user, 'weather' => $weatherParam),
+                array('createdAt' => 'DESC'),
+                5
+            );
 
         $response = array();
 

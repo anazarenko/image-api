@@ -3,8 +3,8 @@
 namespace AppBundle\Manager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class ImageManager
@@ -79,5 +79,28 @@ class ImageManager
         }
 
         return $newFilename;
+    }
+
+    /**
+     * @param Request $request
+     * @param $directory
+     * @param $filename
+     *
+     * @return string
+     */
+    public function getAbsolutePath(Request $request, $directory, $filename)
+    {
+        return 'http://'.$request->getHost().'/'.$directory.'/'.$filename;
+    }
+
+    /**
+     * @param $directory
+     * @param $filename
+     *
+     * @return string
+     */
+    public function getRelativePath($directory, $filename)
+    {
+        return $directory.'/'.$filename;
     }
 }
