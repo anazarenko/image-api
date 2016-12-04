@@ -1,9 +1,3 @@
-app_user_all:
-    pattern: /all
-    defaults: { _controller: AppBundle:User:all }
-    requirements:
-        _method: GET
-
 app_user_create:
     pattern: /login
     defaults: { _controller: AppBundle:User:login }

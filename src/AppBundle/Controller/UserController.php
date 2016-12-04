@@ -94,7 +94,8 @@ class UserController extends Controller
      *     headers={
      *         {
      *             "name"="token",
-     *             "description"="Authorization key"
+     *             "description"="Authorization key",
+     *             "required"=true
      *         }
      *     },
      *     parameters={
@@ -208,6 +209,22 @@ class UserController extends Controller
     }
 
     /**
+     * @ApiDoc(
+     *     resource=true,
+     *     description="Get all user images",
+     *     headers={
+     *         {
+     *             "name"="token",
+     *             "description"="Authorization key",
+     *             "required"=true
+     *         }
+     *     },
+     *     statusCodes={
+     *         200="Successfully done",
+     *         403="Returned when invalid access token"
+     *     }
+     * )
+     *
      * @param Request $request
      * @return static
      *
