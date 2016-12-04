@@ -1,6 +1,8 @@
 <?php
 
 namespace AppBundle\Manager;
+use AppBundle\Entity\Image;
+use GifCreator\GifCreator;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\File;
@@ -79,6 +81,55 @@ class ImageManager
         }
 
         return $newFilename;
+    }
+
+    /**
+     * @param $images
+     * @return string
+     * @throws \Exception
+     */
+    public function createGif($images)
+    {
+        // Create an array containing file paths, resource var (initialized with imagecreatefromXXX),
+        // image URLs or even binary code from image files.
+        // All sorted in order to appear.
+//        $frames = array(
+//            imagecreatefrompng("/../images/pic1.png"), // Resource var
+//            "/../images/pic2.png", // Image file path
+//            file_get_contents("/../images/pic3.jpg"), // Binary source code
+//            'http://thisisafakedomain.com/images/pic4.jpg', // URL
+//        );
+
+        $fs = new Filesystem();
+        $pathToSave = $this->container->getParameter('gif_directory');
+        $frames = array();
+        $durations = array();
+
+        /** @var Image $image */
+        foreach ($images as $image) {
+            $frames[] = $this->getRelativePath(
+                $this->container->getParameter('image_directory_small'),
+                $image->getSmallImage()
+            );
+            // Create an array containing the duration (in millisecond) of each frames (in order too)
+            $durations[] = 50;
+        }
+
+        // Initialize and create the GIF
+        $gc = new GifCreator();
+        $gc->create($frames, $durations, 0);
+
+        $gifBinary = $gc->getGif();
+
+        if (!$fs->exists($pathToSave)) {
+            $fs->mkdir($pathToSave, 0700);
+        }
+
+        $fileName = md5(uniqid()).'.gif';
+
+        file_put_contents($this->getRelativePath($pathToSave, $fileName), $gifBinary);
+
+        return $fileName;
     }
 
     /**

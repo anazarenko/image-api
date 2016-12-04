@@ -25,6 +25,7 @@ parameters:
     image_directory: upload/images
     image_directory_small: upload/images/small
     image_directory_big: upload/images/big
+    gif_directory: upload/images/gif
 
     # OpenWeather Api key
     open_weather_api_key: ~

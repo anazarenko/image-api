@@ -108,6 +108,11 @@ class User implements UserInterface, \Serializable
     private $images;
 
     /**
+     * @ORM\OneToMany(targetEntity="AppBundle\Entity\Animation", mappedBy="user")
+     */
+    private $animations;
+
+    /**
      * User constructor.
      */
     public function __construct() {

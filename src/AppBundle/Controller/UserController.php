@@ -2,6 +2,7 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\Entity\Animation;
 use AppBundle\Entity\Image;
 use AppBundle\Entity\User;
 use AppBundle\Form\ImageUploadType;
@@ -258,6 +259,8 @@ class UserController extends Controller
 
         // Get all user images
         $images = $this->getDoctrine()->getRepository('AppBundle:Image')->findBy(array('user' => $user));
+        // Get all animations
+        $animations = $this->getDoctrine()->getRepository('AppBundle:Animation')->findBy(array('user' => $user));
 
         $response = array();
 
@@ -278,13 +281,22 @@ class UserController extends Controller
             );
         }
 
+        foreach ($animations as $animation) {
+            $response['gif'][] = array(
+                'id' => $animation->getId(),
+                'weather' => $animation->getWeather(),
+                'gif' => $animation->getImage() ? $imageManager->getAbsolutePath($request, $this->getParameter('gif_directory'), $animation->getImage()) : '',
+                'created' => $animation->getCreatedAt()->format('d-m-Y H:i:s')
+            );
+        }
+
         return View::create($response, 200);
     }
 
     /**
      * @ApiDoc(
      *     resource=true,
-     *     description="Get all user images",
+     *     description="Get gif",
      *     headers={
      *         {
      *             "name"="token",
@@ -293,9 +305,12 @@ class UserController extends Controller
      *         }
      *     },
      *     statusCodes={
-     *         200="Successfully done",
+     *         200="GIF file successfully generated",
      *         403="Returned when invalid access token"
-     *     }
+     *     },
+     *     parameters={
+     *         {"name"="weather", "dataType"="string", "required"=false, "description"="Weather for search images"}
+     *     },
      * )
      *
      * @param Request $request
@@ -310,35 +325,27 @@ class UserController extends Controller
             return View::create(array('error' => 'Invalid access token'), 403);
         }
 
-        $weatherParam = $request->query->get('weather');
+        $weatherParam = trim(strtolower($request->query->get('weather')));
+        $imageManager = $this->get('app.image_manager');
+        $entityManager = $this->getDoctrine()->getManager();
 
-        // Get all user images
         $images = $this->getDoctrine()
             ->getRepository('AppBundle:Image')
-            ->findBy(
-                array('user' => $user, 'weather' => $weatherParam),
-                array('createdAt' => 'DESC'),
-                5
-            );
+            ->findImageByWeather($user, $weatherParam);
 
-        $response = array();
+        $gif = $this->get('app.image_manager')->createGif($images);
 
-        foreach ($images as $image) {
-            $response['images'][] = array(
-                'id' => $image->getId(),
-                'description' => $image->getDescription(),
-                'hashtag' => $image->getHashtag(),
-                'parameters' => array(
-                    'longitude' => $image->getLongitude(),
-                    'latitude' => $image->getLatitude(),
-                    'address' => $image->getAddress(),
-                    'weather' => $image->getWeather()
-                ),
-                'smallImage' => $image->getSmallImage() ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_small').'/'.$image->getSmallImage() : '',
-                'bigImage' => $image->getBigImage() ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_big').'/'.$image->getBigImage() : '',
-                'created' => $image->getCreatedAt()->format('d-m-Y H:i:s')
-            );
-        }
+        $animation = new Animation();
+        $animation->setWeather($weatherParam);
+        $animation->setUser($user);
+        $animation->setImage($gif);
+
+        $entityManager->persist($animation);
+        $entityManager->flush();
+
+        $response = array(
+            'gif' => $imageManager->getAbsolutePath($request, $this->getParameter('gif_directory'), $gif)
+        );
 
         return View::create($response, 200);
     }

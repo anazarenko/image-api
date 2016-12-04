@@ -24,7 +24,8 @@
         "friendsofsymfony/rest-bundle": "^2.1",
         "jms/serializer-bundle": "^1.1",
         "nelmio/api-doc-bundle": "^2.13",
-        "kenguest/services-openstreetmap": "dev-master"
+        "kenguest/services-openstreetmap": "dev-master",
+        "sybio/gif-creator": "^1.0"
     },
     "require-dev": {
         "sensio/generator-bundle": "~3.0",
