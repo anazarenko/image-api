@@ -88,6 +88,29 @@ class UserController extends Controller
     }
 
     /**
+     * @ApiDoc(
+     *     resource=true,
+     *     description="Add image",
+     *     headers={
+     *         {
+     *             "name"="token",
+     *             "description"="Authorization key"
+     *         }
+     *     },
+     *     parameters={
+     *         {"name"="image", "dataType"="file", "required"=true, "description"="Image"},
+     *         {"name"="description", "dataType"="string", "required"=false, "description"="Image description"},
+     *         {"name"="hashtag", "dataType"="string", "required"=false, "description"="Image hashtag"},
+     *         {"name"="latitude", "dataType"="float", "required"=true, "description"="Image latitude coordinate"},
+     *         {"name"="longitude", "dataType"="float", "required"=true, "description"="Image longitude coordinate"}
+     *     },
+     *     statusCodes={
+     *         201="Returned when image successfully created",
+     *         400="Returned when incorrect request data",
+     *         403="Returned when invalid access token"
+     *     }
+     * )
+     *
      * @param Request $request
      * @return static
      *
