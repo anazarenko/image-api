@@ -69,7 +69,12 @@ class User implements UserInterface, \Serializable
      * @ORM\Column(type="string")
      *
      * @Assert\NotBlank(message="Please, upload the profile avatar picture.", groups={"registration"})
-     * @Assert\Image(maxSize="2M")
+     * @Assert\Image(
+     *     maxSize="1M",
+     *     mimeTypes = {"image/jpeg", "image/png"},
+     *     mimeTypesMessage = "Wrong file type (jpg, png)",
+     *     groups={"registration"}
+     * )
      * @Groups({"login"})
      * @Expose()
      */

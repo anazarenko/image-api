@@ -16,6 +16,7 @@ class MainController extends Controller
      */
     public function indexAction(Request $request)
     {
+
         return $this->render('AppBundle:profile:index.html.twig');
     }
 }

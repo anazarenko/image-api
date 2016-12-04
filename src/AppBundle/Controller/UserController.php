@@ -10,6 +10,7 @@ use AppBundle\Model\Geolocation\GeolocationFactory;
 use FOS\RestBundle\View\View;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +41,7 @@ class UserController extends Controller
         $user = new User();
 
         $form = $this->createForm(new UserRegistrationType(), $user);
-        $form->submit(array_merge($request->request->all(), $request->files->all()));
+        $this->processForm($request, $form);
 
         if ($form->isValid()) {
             $token = md5(uniqid($user->getEmail(), true));
@@ -111,14 +112,45 @@ class UserController extends Controller
             $file = $image->getImage();
 
             // Generate a unique name for the picture before saving it
-            $fileName = md5(uniqid()).'.'.$file->guessExtension();
+            $fileName = md5(uniqid().$user->getId()).'.'.$file->guessExtension();
 
-            // Move the file to the directory where avatars are stored
+            // Move the file to the directory where pictures are stored
             $file->move($this->getParameter('image_directory'), $fileName);
+
+            // Create small image
+            $smallImage = $this
+                ->get('app.image_manager')
+                ->resizeImage(
+                    $this->getParameter('image_directory').'/'.$fileName,
+                    $this->getParameter('image_directory_small'),
+                    300,
+                    300
+                );
+
+            // Get sizes
+            list($width_orig, $height_orig) = getimagesize($this->getParameter('image_directory').'/'.$fileName);
+
+            // Create big image
+            if ($width_orig > 1200 || $height_orig > 1200) {
+                $bigImage = $this
+                    ->get('app.image_manager')
+                    ->resizeImage(
+                        $this->getParameter('image_directory').'/'.$fileName,
+                        $this->getParameter('image_directory_small'),
+                        800,
+                        800
+                    );
+            } else {
+                $bigImage = $fileName;
+                $fs = new Filesystem();
+                $fs->copy($this->getParameter('image_directory').'/'.$fileName, $this->getParameter('image_directory_big').'/'.$fileName);
+            }
+
 
             // Save picture path
             $image->setImage($fileName);
-            $image->setBigImagePath('http://'.$request->getHost().'/'.$this->getParameter('image_directory').'/'.$fileName);
+            $image->setBigImage($bigImage);
+            $image->setSmallImage($smallImage);
 
             // Get address
             $geolocator = GeolocationFactory::create(GeolocationFactory::TYPE_GOOGLE);
@@ -130,11 +162,12 @@ class UserController extends Controller
             $weatherString = $weatherService->getWeatherByCoords($image->getLatitude(), $image->getLongitude());
             $image->setWeather($weatherString);
 
-            $entityManager->persist($image);
-            $entityManager->flush();
+//            $entityManager->persist($image);
+//            $entityManager->flush();
 
             $response = array(
-                'bigPhoto' => $image->getBigImagePath(),
+                'smallImage' => $smallImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_small').'/'.$smallImage : '',
+                'bigImage' => $bigImage ? 'http://'.$request->getHost().'/'.$this->getParameter('image_directory_big').'/'.$bigImage : '',
                 'weather' => $image->getWeather(),
                 'address' => $image->getAddress(),
             );

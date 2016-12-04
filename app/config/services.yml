@@ -11,3 +11,7 @@ services:
     app.weather_manager:
             class:     AppBundle\Manager\WeatherManager
             arguments: ['@service_container']
+
+    app.image_manager:
+            class:     AppBundle\Manager\ImageManager
+            arguments: ['@service_container']

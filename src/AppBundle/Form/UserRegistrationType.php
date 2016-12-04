@@ -17,7 +17,7 @@ class UserRegistrationType extends AbstractType
             ->add('username')
             ->add('email', EmailType::class)
             ->add('password', PasswordType::class)
-            ->add('avatar', FileType::class);
+            ->add('avatar');
     }
 
     public function configureOptions(OptionsResolver $resolver)

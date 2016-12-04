@@ -35,16 +35,6 @@ class Image
     private $user;
 
     /**
-     * @ORM\Column(type="string")
-     *
-     * @Assert\NotBlank(message="Please, upload the image.", groups={"upload"})
-     * @Assert\Image(maxSize="2M", groups={"upload"})
-     * @Groups({"upload"})
-     * @Expose()
-     */
-    private $image;
-
-    /**
      * @ORM\Column(type="string", nullable=true)
      */
     private $description;
@@ -58,8 +48,8 @@ class Image
      * @ORM\Column(type="float")
      * @Assert\NotBlank(groups={"upload"})
      * @Assert\Range(
-     *     min = -90,
-     *     max = 90,
+     *     min = 0,
+     *     max = 180,
      *     minMessage = "Latitude must {{ limit }} or more",
      *     maxMessage = "Latitude should be {{ limit }} or less",
      *     groups={"upload"}
@@ -71,8 +61,8 @@ class Image
      * @ORM\Column(type="float")
      * @Assert\NotBlank(groups={"upload"})
      * @Assert\Range(
-     *     min = 0,
-     *     max = 180,
+     *     min = -90,
+     *     max = 90,
      *     minMessage = "Longitude must {{ limit }} or more",
      *     maxMessage = "Longitude should be {{ limit }} or less",
      *     groups={"upload"}
@@ -81,14 +71,30 @@ class Image
     private $longitude;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string")
+     *
+     * @Assert\NotBlank(message="Please, upload the image.", groups={"upload"})
+     * @Assert\Image(
+     *     minWidth="600",
+     *     maxSize="2M",
+     *     mimeTypes = {"image/jpeg", "image/png"},
+     *     mimeTypesMessage = "Wrong file type (jpg, png)",
+     *     groups={"upload"}
+     * )
+     * @Groups({"upload"})
+     * @Expose()
      */
-    private $smallImagePath;
+    private $image;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      */
-    private $bigImagePath;
+    private $smallImage;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $bigImage;
 
     /**
      * @ORM\Column(type="string", nullable=true)
@@ -133,30 +139,6 @@ class Image
     public function getId()
     {
         return $this->id;
-    }
-
-    /**
-     * Set image
-     *
-     * @param string $image
-     *
-     * @return Image
-     */
-    public function setImage($image)
-    {
-        $this->image = $image;
-
-        return $this;
-    }
-
-    /**
-     * Get image
-     *
-     * @return string
-     */
-    public function getImage()
-    {
-        return $this->image;
     }
 
     /**
@@ -256,51 +238,75 @@ class Image
     }
 
     /**
-     * Set smallImagePath
+     * Set image
      *
-     * @param string $smallImagePath
+     * @param string $image
      *
      * @return Image
      */
-    public function setSmallImagePath($smallImagePath)
+    public function setImage($image)
     {
-        $this->smallImagePath = $smallImagePath;
+        $this->image = $image;
 
         return $this;
     }
 
     /**
-     * Get smallImagePath
+     * Get image
      *
      * @return string
      */
-    public function getSmallImagePath()
+    public function getImage()
     {
-        return $this->smallImagePath;
+        return $this->image;
     }
 
     /**
-     * Set bigImagePath
+     * Set smallImage
      *
-     * @param string $bigImagePath
+     * @param string $smallImage
      *
      * @return Image
      */
-    public function setBigImagePath($bigImagePath)
+    public function setSmallImage($smallImage)
     {
-        $this->bigImagePath = $bigImagePath;
+        $this->smallImage = $smallImage;
 
         return $this;
     }
 
     /**
-     * Get bigImagePath
+     * Get smallImage
      *
      * @return string
      */
-    public function getBigImagePath()
+    public function getSmallImage()
     {
-        return $this->bigImagePath;
+        return $this->smallImage;
+    }
+
+    /**
+     * Set bigImage
+     *
+     * @param string $bigImage
+     *
+     * @return Image
+     */
+    public function setBigImage($bigImage)
+    {
+        $this->bigImage = $bigImage;
+
+        return $this;
+    }
+
+    /**
+     * Get bigImage
+     *
+     * @return string
+     */
+    public function getBigImage()
+    {
+        return $this->bigImage;
     }
 
     /**
