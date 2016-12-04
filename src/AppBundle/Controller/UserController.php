@@ -8,6 +8,7 @@ use AppBundle\Form\ImageUploadType;
 use AppBundle\Form\UserRegistrationType;
 use AppBundle\Model\Geolocation\GeolocationFactory;
 use FOS\RestBundle\View\View;
+use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Symfony\Component\Filesystem\Filesystem;
@@ -18,6 +19,21 @@ use Symfony\Component\HttpFoundation\Request;
 class UserController extends Controller
 {
     /**
+     * @ApiDoc(
+     *     resource=true,
+     *     description="Create new user",
+     *     parameters={
+     *         {"name"="username", "dataType"="string", "required"=false, "description"="User name"},
+     *         {"name"="email", "dataType"="email", "required"=true, "description"="User email"},
+     *         {"name"="password", "dataType"="string", "required"=true, "description"="Password"},
+     *         {"name"="avatar", "dataType"="file", "required"=true, "description"="User avatar"}
+     *     },
+     *     statusCodes={
+     *         201="Returned when user successfully created",
+     *         400="Returned when incorrect request data"
+     *     }
+     * )
+     *
      * @param Request $request
      * @return static
      *

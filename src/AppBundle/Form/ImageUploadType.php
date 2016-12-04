@@ -27,6 +27,7 @@ class ImageUploadType extends AbstractType
             'data_class' => 'AppBundle\Entity\Image',
             'validation_groups' => array('upload'),
             'csrf_protection' => false,
+            'allow_extra_fields' => true
         ));
     }
 

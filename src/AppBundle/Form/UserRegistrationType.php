@@ -26,6 +26,7 @@ class UserRegistrationType extends AbstractType
             'data_class' => 'AppBundle\Entity\User',
             'validation_groups' => array('registration'),
             'csrf_protection' => false,
+            'allow_extra_fields' => true
         ));
     }
 
