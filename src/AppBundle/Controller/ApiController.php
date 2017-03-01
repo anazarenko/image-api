@@ -7,6 +7,7 @@ use AppBundle\Entity\Image;
 use AppBundle\Entity\User;
 use AppBundle\Entity\UserAccessToken;
 use AppBundle\Form\ImageUploadType;
+use AppBundle\Form\UserLoginType;
 use AppBundle\Form\UserRegistrationType;
 use AppBundle\Model\Geolocation\GeolocationFactory;
 use FOS\RestBundle\View\View;
@@ -22,11 +23,11 @@ class ApiController extends Controller
 {
     /**
      * @ApiDoc(
-     *     resource=true,
+     *     section="Authorization",
      *     description="Create new user",
      *     parameters={
      *         {"name"="username", "dataType"="string", "required"=false, "description"="User name"},
-     *         {"name"="email", "dataType"="email", "required"=true, "description"="User email"},
+     *         {"name"="email", "dataType"="string", "required"=true, "description"="User email"},
      *         {"name"="password", "dataType"="string", "required"=true, "description"="Password"},
      *         {"name"="avatar", "dataType"="file", "required"=true, "description"="User avatar"}
      *     },
@@ -37,11 +38,11 @@ class ApiController extends Controller
      * )
      *
      * @param Request $request
-     * @return static
+     * @return View
      *
      * @Rest\View(serializerGroups={"login"})
      */
-    public function loginAction(Request $request)
+    public function createAction(Request $request)
     {
         $user = new User();
 
@@ -50,11 +51,9 @@ class ApiController extends Controller
 
         if ($form->isValid()) {
             $entityManager = $this->getDoctrine()->getManager();
-            $encoder = $this->container->get('security.password_encoder');
             $imageManager = $this->get('app.image_manager');
 
-            $encoded = $encoder->encodePassword($user, $user->getPassword());
-            $user->setPassword($encoded);
+            $user->setPassword(md5($user->getPassword()));
             $user->setRoles(array(User::ROLE_USER));
 
             $accessToken = new UserAccessToken();
@@ -101,7 +100,75 @@ class ApiController extends Controller
 
     /**
      * @ApiDoc(
-     *     resource=true,
+     *     section="Authorization",
+     *     description="Login",
+     *     parameters={
+     *         {"name"="email", "dataType"="string", "required"=true, "description"="User email"},
+     *         {"name"="password", "dataType"="string", "required"=true, "description"="Password"}
+     *     },
+     *     statusCodes={
+     *         200="Returned when user successfully logged in",
+     *         400="Returned when incorrect request data"
+     *     }
+     * )
+     *
+     * @param Request $request
+     * @return View
+     *
+     * @Rest\View(serializerGroups={"login"})
+     */
+    public function loginAction(Request $request)
+    {
+        if ($request->request->get('email') && $request->request->get('password')) {
+            $entityManager = $this->getDoctrine()->getManager();
+            $imageManager = $this->get('app.image_manager');
+
+            $user = $entityManager->getRepository('AppBundle:User')->findOneBy(
+                array('email' => $request->request->get('email'), 'password' => md5($request->request->get('password')))
+            );
+
+            if (!$user) {
+                return View::create(array('error' => 'Invalid user data'), 400);
+            }
+
+            $accessTokens = $entityManager->getRepository('AppBundle:UserAccessToken')
+                ->findBy(
+                    array('user' => $user->getId()),
+                    array('expiredAt' => 'DESC'),
+                    1
+                );
+
+            if ($accessTokens[0]->getExpiredAt() < new \DateTime('now')) {
+                $accessToken = new UserAccessToken();
+                $accessToken->setUser($user);
+                $accessToken->setAccessToken(md5(uniqid($user->getEmail(), true)));
+                $accessToken->setCreatedAt(new \DateTime('now'));
+                $accessToken->setExpiredAt((new \DateTime('now'))->modify('+1 month'));
+                $entityManager->persist($accessToken);
+                $entityManager->flush();
+            } else {
+                $accessToken = $accessTokens[0];
+            }
+
+            $response = array(
+                'creation_time' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
+                'token' => $accessToken->getAccessToken(),
+                'avatar' => $imageManager->getAbsolutePath(
+                    $request,
+                    $this->getParameter('avatar_directory'),
+                    $user->getAvatar()
+                )
+            );
+
+            return View::create($response, 200);
+        }
+
+        return View::create(array('error' => 'Incorrect data'), 400);
+    }
+
+    /**
+     * @ApiDoc(
+     *     section="Image",
      *     description="Add image",
      *     headers={
      *         {
@@ -125,7 +192,7 @@ class ApiController extends Controller
      * )
      *
      * @param Request $request
-     * @return static
+     * @return View
      *
      * @Rest\View(serializerGroups={"upload"})
      */
@@ -241,7 +308,7 @@ class ApiController extends Controller
 
     /**
      * @ApiDoc(
-     *     resource=true,
+     *     section="Image",
      *     description="Get all user images",
      *     headers={
      *         {
@@ -257,7 +324,7 @@ class ApiController extends Controller
      * )
      *
      * @param Request $request
-     * @return static
+     * @return View
      *
      * @Rest\View(serializerGroups={"all"})
      */
@@ -269,7 +336,7 @@ class ApiController extends Controller
         }
 
         $imageManager = $this->get('app.image_manager');
-        $response = array();
+        $response = array('images' => []);
 
         foreach ($user->getImages() as $image) {
             $response['images'][] = array(
@@ -297,20 +364,20 @@ class ApiController extends Controller
             );
         }
 
-        /** @var UserAccessToken $token */
-        foreach ($user->getAccessTokens() as $token) {
-            $response['tokens'][] = array(
-                'token' => $token->getAccessToken(),
-                'expiredAt' => $token->getExpiredAt()->format('d-m-Y')
-            );
-        }
+//        /** @var UserAccessToken $token */
+//        foreach ($user->getAccessTokens() as $token) {
+//            $response['tokens'][] = array(
+//                'token' => $token->getAccessToken(),
+//                'expiredAt' => $token->getExpiredAt()->format('d-m-Y')
+//            );
+//        }
 
         return View::create($response, 200);
     }
 
     /**
      * @ApiDoc(
-     *     resource=true,
+     *     section="Image",
      *     description="Get gif",
      *     headers={
      *         {
@@ -329,7 +396,7 @@ class ApiController extends Controller
      * )
      *
      * @param Request $request
-     * @return static
+     * @return View
      *
      * @Rest\View(serializerGroups={"gif"})
      */
@@ -378,7 +445,7 @@ class ApiController extends Controller
 
     /**
      * @param Request $request
-     * @return User|null|object
+     * @return User|null|object|bool
      */
     private function validateToken(Request $request)
     {

@@ -1,4 +1,10 @@
 app_user_create:
+    pattern: /create
+    defaults: { _controller: AppBundle:Api:create }
+    requirements:
+        _method: POST
+
+app_user_login:
     pattern: /login
     defaults: { _controller: AppBundle:Api:login }
     requirements:

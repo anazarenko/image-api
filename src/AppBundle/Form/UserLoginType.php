@@ -9,22 +9,20 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class UserRegistrationType extends AbstractType
+class UserLoginType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('username')
             ->add('email', EmailType::class)
-            ->add('password', PasswordType::class)
-            ->add('avatar');
+            ->add('password', PasswordType::class);
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(array(
             'data_class' => 'AppBundle\Entity\User',
-            'validation_groups' => array('registration'),
+            'validation_groups' => array('login'),
             'csrf_protection' => false,
             'allow_extra_fields' => true
         ));
@@ -32,6 +30,6 @@ class UserRegistrationType extends AbstractType
 
     public function getName()
     {
-        return 'user_registration';
+        return 'user_login';
     }
 }
