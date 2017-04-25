@@ -128,7 +128,7 @@ class ApiController extends Controller
             );
 
             if (!$user) {
-                return View::create(array('error' => 'Invalid user data'), 400);
+                return View::create(array('error' => 'Incorrect email or password'), 400);
             }
 
             $accessTokens = $entityManager->getRepository('AppBundle:UserAccessToken')
@@ -217,6 +217,8 @@ class ApiController extends Controller
             // $file stores the uploaded avatar file
             /** @var UploadedFile $file */
             $file = $image->getImage();
+            dump($file->getSize());
+            die;
 
             // Generate a unique name for the picture before saving it
             $fileName = md5(uniqid().$user->getId()).'.'.$file->guessExtension();
