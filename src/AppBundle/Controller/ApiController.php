@@ -217,8 +217,6 @@ class ApiController extends Controller
             // $file stores the uploaded avatar file
             /** @var UploadedFile $file */
             $file = $image->getImage();
-            dump($file->getSize());
-            die;
 
             // Generate a unique name for the picture before saving it
             $fileName = md5(uniqid().$user->getId()).'.'.$file->guessExtension();
