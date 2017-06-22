@@ -48,8 +48,8 @@ class Image
      * @ORM\Column(type="float")
      * @Assert\NotBlank(groups={"upload"})
      * @Assert\Range(
-     *     min = 0,
-     *     max = 180,
+     *     min = -90,
+     *     max = 90,
      *     minMessage = "Latitude must {{ limit }} or more",
      *     maxMessage = "Latitude should be {{ limit }} or less",
      *     groups={"upload"}
@@ -61,8 +61,8 @@ class Image
      * @ORM\Column(type="float")
      * @Assert\NotBlank(groups={"upload"})
      * @Assert\Range(
-     *     min = -90,
-     *     max = 90,
+     *     min = -180,
+     *     max = 180,
      *     minMessage = "Longitude must {{ limit }} or more",
      *     maxMessage = "Longitude should be {{ limit }} or less",
      *     groups={"upload"}
