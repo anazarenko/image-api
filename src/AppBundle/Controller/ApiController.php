@@ -123,6 +123,7 @@ class ApiController extends Controller
             $entityManager = $this->getDoctrine()->getManager();
             $imageManager = $this->get('app.image_manager');
 
+            /** @var User $user */
             $user = $entityManager->getRepository('AppBundle:User')->findOneBy(
                 array('email' => $request->request->get('email'), 'password' => md5($request->request->get('password')))
             );
